@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Experiment</title>
+    <script src="https://unpkg.com/jspsych@8.2.1"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+    <link href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body></body>
+  <script>
+
+    /* initialize jsPsych */
+    const jsPsych = initJsPsych({
+      on_finish: function() {
+        jsPsych.data.displayData();
+        window.location = "https://app.prolific.com/submissions/complete?cc=C15226FM"
+      }
+    });
+
+    function generateRandomZeroOrOne() {
+      return Math.round(Math.random());
+    };
+
+	             
+    const indicator = generateRandomZeroOrOne();
+
+    const timeline_memory = [];
+    
+    const timeline_perceptual = [];
+
+    const welcome = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "Welcome to the experiment. Press any key to begin."
+    };
+
+    const general_instruction = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus:  `
+      <p> Your task is to determine which of the two letter strings shown is blurrier. </p>
+      <p>Two letter strings will appear, one on top and one on the bottom. </p>
+      <p> If you think the top letter string is blurrier, click W. </p>
+      <p> If you think the bottom letter string is blurrier, click S. </p>
+      <p> Please press any key to continue. </p>
+      `,
+    };
+
+		const word_practice_trial_1 = {
+  		type: jsPsychHtmlKeyboardResponse,
+  		stimulus: function() {
+        var stim = jsPsych.evaluateTimelineVariable('target') + jsPsych.evaluateTimelineVariable('sample');
+        return stim
+      },
+  		choices: ["w", "s"],
+  		trial_duration: 1000,
+  		css_classes: ['stimulus'],
+  		data: {
+    		task: 'response_practice',
+  		},
+    }
+
+		const practice1 = [];
+
+    const trial1 = [];
+
+    const fixation = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="font-size:60px;font-size: 24px;">+</div>',
+      choices: "NO_KEYS",
+      css_classes: ['fixation'],
+      trial_duration: function(){
+        return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+      },
+      data: {
+        task: 'fixation'
+      }
+    };
+
+    const test = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        var stim = jsPsych.evaluateTimelineVariable('target') + jsPsych.evaluateTimelineVariable('sample');
+        return stim
+      },
+      trial_duration: 1000, 
+      choices: ["w", "s"],
+      data: {
+        task: 'perceptual',
+        correct_response: jsPsych.timelineVariable('correct_response'),
+        type: jsPsych.timelineVariable('type'),
+        is_word: jsPsych.timelineVariable('is_word'), 
+        blurrier: jsPsych.timelineVariable('blurrier'), 
+        blur_dif: jsPsych.timelineVariable('blur_dif'), 
+        target_stimuli: jsPsych.timelineVariable('target_stimuli'), 
+        sample_stimuli: jsPsych.timelineVariable('sample_stimuli'), 
+        target_blur: jsPsych.timelineVariable('target_blur'), 
+        sample_blur: jsPsych.timelineVariable('sample_blur'), 
+
+      },
+      on_finish: function(data){
+        data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+      }
+    };
+
+    const test_demo_1 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="position: relative;"><div style="filter: blur(1px);font-size: 24px;font-family: monospace;">take</div>' + '<div style="filter: blur(3px);font-size: 24px;font-family: monospace;">four</div>' + "<div>\u00A0</div></div>" + '<p style="position: absolute; bottom: 10vh; right: 15vh; font-size: 20px; width: 80vw; text-align: center">This is where you would respond. Since the lower letterstring is blurrier than the upper one, please press "s".</p>',
+      choices: 's',
+      response_ends_trial: true,
+    }
+
+    const test_demo_2 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="position: relative;"><div style="filter: blur(3px);font-size: 24px;font-family: monospace;">take</div>' + '<div style="filter: blur(1px);font-size: 24px;font-family: monospace;">four</div>' + "<div>\u00A0</div></div>" + '<p style="position: absolute; bottom: 10vh; right: 15vh; font-size: 20px; width: 80vw; text-align: center">This is where you would respond. Since the higher letterstring is blurrier than the lower one, please press "w".</p>',
+      choices: 'w',
+      response_ends_trial: true,
+    }
+
+    const delay_fixation = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '+',
+      choices: "NO_KEYS",
+      trial_duration: 33.3,
+      css_classes: ['fixation'],
+      data: {
+        task: 'post_word_fixation'
+      }
+    };
+
+    const mask = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<div>&&&&</div><div>&&&&</div>",
+      data: {
+        task: 'mask'
+      },
+      css_classes: ['mask'],
+      choices: "NO_KEYS",
+      trial_duration: 25, // if we can get 120Hz refresh rate
+    };
+
+    practice1.push(fixation, word_practice_trial_1, delay_fixation, mask)
+
+    trial1.push(fixation, test, delay_fixation, mask)
+
+    const intermission = {
+      type: jsPsychHtmlKeyboardResponse,
+      choices: 'b', 
+      response_ends_trial: true,
+      stimulus: `
+        <p>You've finished the first block of the experiment. </p>
+        <p>Please take a short break before entering the next block.</p>
+        <p>Notice that the design of the next block is different from the one completed.</p>
+        <p>Please carefully read the instructions before proceeding to next block.</p>
+        <div style='width: 700px;'>
+        <p>When you are ready, press B to begin.</p>
+      `,
+      post_trial_gap: 2000
+    }
+
+    const trial2 = [];
+
+    const practice2 = [];
+
+    const target_sample = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        var stim = jsPsych.evaluateTimelineVariable("target") + jsPsych.evaluateTimelineVariable('sample');
+        return stim
+      },
+      choices: "NO_KEYS", 
+      trial_duration: 230, 
+      data: {
+        task: 'target_sample',
+      }
+    };
+
+    const target_sample_demo1 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="position: relative;"><div style="filter: blur(1px);font-size: 24px;font-family: monospace;">take</div>' + '<div style="filter: blur(3px);font-size: 24px;font-family: monospace;">four</div></div>' + '<p style="position: absolute; bottom: 10vh; right: 20vh; font-size: 20px; width: 80vw; text-align: center">This is where the two letter strings are showing. You do not need to respond but please press "b" for now to proceed the tutorial.</p>',
+      choices: "b", 
+      response_ends_trial: true,
+    };
+
+    const target_sample_demo2 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="position: relative;"><div style="filter: blur(3px);font-size: 24px;font-family: monospace;">take</div>' + '<div style="filter: blur(1px);font-size: 24px;font-family: monospace;">four</div></div>' + '<p style="position: absolute; bottom: 10vh; right: 20vh; font-size: 20px; width: 80vw; text-align: center">This is where the two letter strings are showing. You do not need to respond but please press "b" for now to proceed the tutorial.</p>',
+      choices: "b", 
+      response_ends_trial: true,
+    };
+
+    const sample = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        var stim = jsPsych.evaluateTimelineVariable('target') + "<div>\u00A0</div>";
+        return stim
+      },
+      choices: ["w", "s"], 
+      response_ends_trial: true,
+      trial_duration: 10000,
+      data: {
+        task: 'memory',
+        correct_response: jsPsych.timelineVariable('correct_response'),
+        is_word: jsPsych.timelineVariable('is_word'), 
+        blurrier: jsPsych.timelineVariable('blurrier'), 
+        type: jsPsych.timelineVariable('type'),
+        is_word: jsPsych.timelineVariable('is_word'), 
+        blurrier: jsPsych.timelineVariable('blurrier'), 
+        blur_dif: jsPsych.timelineVariable('blur_dif'), 
+        target_stimuli: jsPsych.timelineVariable('target_stimuli'), 
+        sample_stimuli: jsPsych.timelineVariable('sample_stimuli'), 
+        target_blur: jsPsych.timelineVariable('target_blur'), 
+        sample_blur: jsPsych.timelineVariable('sample_blur'), 
+      },
+      on_finish: function(data){
+        data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+      }
+    };
+
+    const sample_practice = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        var stim = jsPsych.evaluateTimelineVariable('target') + "<div>\u00A0</div>";
+        return stim
+      },
+      choices: ["w", "s"], 
+      response_ends_trial: true,
+      trial_duration: 10000,
+      data: {
+        task: 'response_practice',
+      }
+    };
+
+    const sample_tutorial1 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="position: relative;"><div style="filter: blur(1px);font-size: 24px;font-family: monospace;">take</div>' + '<div>\u00A0</div></div>' + '<p style="position: absolute; bottom: 10vh; right: 20vh; font-size: 20px; width: 80vw; text-align: center">This is where you would respond. Since the lower letterstring is blurrier than the upper one, please press "s".</p>',
+      choices: "s", 
+      response_ends_trial: true,
+    };
+
+    const sample_tutorial2 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="position: relative;"><div style="filter: blur(3px);font-size: 24px;font-family: monospace;">take</div>' + '<div>\u00A0</div></div>' +  '<p style="position: absolute; bottom: 10vh; right: 20vh; font-size: 20px; width: 80vw; text-align: center">This is where you would respond. Since the upper letterstring is blurrier than the lower one, please press "w".</p>',
+      choices: "w", 
+      response_ends_trial: true,
+    };
+
+    trial2.push(fixation, target_sample, sample)
+
+    practice2.push(fixation, target_sample, sample_practice)
+
+		function addAttentionChecks(timeline, attentionCheckTrial) {
+      const chunkSize = 24;
+      const numberOfChunks = 5;
+      
+      const newTimeline = [];
+      timeline = jsPsych.randomization.shuffle(timeline);
+      
+      for (chunkIndex = 0; chunkIndex < numberOfChunks; chunkIndex++){
+        const start = chunkIndex * chunkSize;
+    		const end = start + chunkSize;
+    		const currentChunk = jsPsych.randomization.shuffle(timeline.slice(start, end));
+
+        newTimeline.push(...currentChunk);
+        
+      	newTimeline.push(...attentionCheckTrial.slice(chunkIndex, chunkIndex + 1));
+      	
+      }
+
+      console.log(newTimeline)
+			return newTimeline;
+    };
+
+
+		const test_stimuli_word = [
+    {target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">cash</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'been', sample_stimuli: 'cash', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">cash</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'been', sample_stimuli: 'cash', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">cash</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'been', sample_stimuli: 'cash', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">cash</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'been', sample_stimuli: 'cash', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">been</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'from', sample_stimuli: 'been', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">been</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'from', sample_stimuli: 'been', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">been</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'from', sample_stimuli: 'been', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">been</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'from', sample_stimuli: 'been', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">seem</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'book', sample_stimuli: 'seem', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">seem</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'book', sample_stimuli: 'seem', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">seem</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'book', sample_stimuli: 'seem', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">seem</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'book', sample_stimuli: 'seem', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">book</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'send', sample_stimuli: 'book', target_blur: 2.6, sample_blur: 2.73, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">book</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'send', sample_stimuli: 'book', target_blur: 2.6, sample_blur: 2.86, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">book</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'send', sample_stimuli: 'book', target_blur: 2.6, sample_blur: 2.47, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">book</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'send', sample_stimuli: 'book', target_blur: 2.6, sample_blur: 2.34, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">neck</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'cash', sample_stimuli: 'neck', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'cash', sample_stimuli: 'neck', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">neck</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'cash', sample_stimuli: 'neck', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">neck</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'cash', sample_stimuli: 'neck', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">luck</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'dead', sample_stimuli: 'luck', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">luck</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'dead', sample_stimuli: 'luck', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">luck</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'dead', sample_stimuli: 'luck', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">luck</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'dead', sample_stimuli: 'luck', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">dead</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'much', sample_stimuli: 'dead', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">dead</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'much', sample_stimuli: 'dead', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">dead</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'much', sample_stimuli: 'dead', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">dead</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'much', sample_stimuli: 'dead', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">send</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'from', sample_stimuli: 'send', target_blur: 2.6, sample_blur: 2.73, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">send</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'from', sample_stimuli: 'send', target_blur: 2.6, sample_blur: 2.86, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">send</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'from', sample_stimuli: 'send', target_blur: 2.6, sample_blur: 2.47, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">send</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'from', sample_stimuli: 'send', target_blur: 2.6, sample_blur: 2.34, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">long</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'seem', sample_stimuli: 'long', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'seem', sample_stimuli: 'long', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">long</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'seem', sample_stimuli: 'long', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">long</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'seem', sample_stimuli: 'long', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'long', sample_stimuli: 'test', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'long', sample_stimuli: 'test', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'long', sample_stimuli: 'test', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'long', sample_stimuli: 'test', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">much</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'look', sample_stimuli: 'much', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">much</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'look', sample_stimuli: 'much', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">much</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'look', sample_stimuli: 'much', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">much</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'look', sample_stimuli: 'much', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">look</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'want', sample_stimuli: 'look', target_blur: 2.6, sample_blur: 2.73, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">look</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'want', sample_stimuli: 'look', target_blur: 2.6, sample_blur: 2.86, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">look</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'want', sample_stimuli: 'look', target_blur: 2.6, sample_blur: 2.47, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">look</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'want', sample_stimuli: 'look', target_blur: 2.6, sample_blur: 2.34, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">want</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'luck', sample_stimuli: 'want', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">want</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'luck', sample_stimuli: 'want', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">want</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'luck', sample_stimuli: 'want', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">want</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'luck', sample_stimuli: 'want', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">room</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'neck', sample_stimuli: 'room', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">room</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'neck', sample_stimuli: 'room', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">room</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'neck', sample_stimuli: 'room', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">room</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'neck', sample_stimuli: 'room', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'room', sample_stimuli: 'test', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 's', is_word: '1', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'room', sample_stimuli: 'test', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'room', sample_stimuli: 'test', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">test</div>', correct_response: 'w', is_word: '1', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'room', sample_stimuli: 'test', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+      ]
+
+  const test_stimuli_nonword_1 = [
+    {target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">shca</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'been', sample_stimuli: 'shca', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">shca</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'been', sample_stimuli: 'shca', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">shca</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'been', sample_stimuli: 'shca', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">shca</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'been', sample_stimuli: 'shca', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">eebn</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'from', sample_stimuli: 'eebn', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">eebn</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'from', sample_stimuli: 'eebn', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">eebn</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'from', sample_stimuli: 'eebn', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">eebn</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'from', sample_stimuli: 'eebn', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">esme</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'book', sample_stimuli: 'esme', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">esme</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'book', sample_stimuli: 'esme', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">esme</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'book', sample_stimuli: 'esme', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">esme</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'book', sample_stimuli: 'esme', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">koob</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'send', sample_stimuli: 'koob', target_blur: 2.6, sample_blur: 2.73, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">koob</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'send', sample_stimuli: 'koob', target_blur: 2.6, sample_blur: 2.86, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">koob</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'send', sample_stimuli: 'koob', target_blur: 2.6, sample_blur: 2.47, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">koob</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'send', sample_stimuli: 'koob', target_blur: 2.6, sample_blur: 2.34, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">knec</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'cash', sample_stimuli: 'knec', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">knec</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'cash', sample_stimuli: 'knec', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">knec</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'cash', sample_stimuli: 'knec', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">knec</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'cash', sample_stimuli: 'knec', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">clku</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'dead', sample_stimuli: 'clku', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">clku</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'dead', sample_stimuli: 'clku', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">clku</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'dead', sample_stimuli: 'clku', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">clku</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'dead', sample_stimuli: 'clku', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">aedd</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'much', sample_stimuli: 'aedd', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">aedd</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'much', sample_stimuli: 'aedd', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">aedd</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'much', sample_stimuli: 'aedd', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">aedd</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'much', sample_stimuli: 'aedd', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">ndes</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'from', sample_stimuli: 'ndes', target_blur: 2.6, sample_blur: 2.73, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">ndes</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'from', sample_stimuli: 'ndes', target_blur: 2.6, sample_blur: 2.86, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">ndes</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'from', sample_stimuli: 'ndes', target_blur: 2.6, sample_blur: 2.47, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">ndes</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'from', sample_stimuli: 'ndes', target_blur: 2.6, sample_blur: 2.34, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">gnlo</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'seem', sample_stimuli: 'gnlo', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">gnlo</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'seem', sample_stimuli: 'gnlo', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">gnlo</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'seem', sample_stimuli: 'gnlo', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">gnlo</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'seem', sample_stimuli: 'gnlo', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'long', sample_stimuli: 'stte', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'long', sample_stimuli: 'stte', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'long', sample_stimuli: 'stte', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'long', sample_stimuli: 'stte', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">uhmc</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'look', sample_stimuli: 'uhmc', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">uhmc</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'look', sample_stimuli: 'uhmc', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">uhmc</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'look', sample_stimuli: 'uhmc', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">uhmc</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'look', sample_stimuli: 'uhmc', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">oklo</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'want', sample_stimuli: 'oklo', target_blur: 2.6, sample_blur: 2.73, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">oklo</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'want', sample_stimuli: 'oklo', target_blur: 2.6, sample_blur: 2.86, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">oklo</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'want', sample_stimuli: 'oklo', target_blur: 2.6, sample_blur: 2.47, type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">oklo</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'want', sample_stimuli: 'oklo', target_blur: 2.6, sample_blur: 2.34, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">nawt</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'luck', sample_stimuli: 'nawt', target_blur: 2, sample_blur: 2.1, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">nawt</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'luck', sample_stimuli: 'nawt', target_blur: 2, sample_blur: 2.2, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">nawt</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'luck', sample_stimuli: 'nawt', target_blur: 2, sample_blur: 1.9, type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">nawt</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'luck', sample_stimuli: 'nawt', target_blur: 2, sample_blur: 1.8, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">omro</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'neck', sample_stimuli: 'omro', target_blur: 2.2, sample_blur: 2.31, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">omro</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'neck', sample_stimuli: 'omro', target_blur: 2.2, sample_blur: 2.42, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">omro</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'neck', sample_stimuli: 'omro', target_blur: 2.2, sample_blur: 2.09, type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">omro</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'neck', sample_stimuli: 'omro', target_blur: 2.2, sample_blur: 1.98, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'room', sample_stimuli: 'stte', target_blur: 2.4, sample_blur: 2.52, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'room', sample_stimuli: 'stte', target_blur: 2.4, sample_blur: 2.64, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'room', sample_stimuli: 'stte', target_blur: 2.4, sample_blur: 2.28, type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">stte</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'room', sample_stimuli: 'stte', target_blur: 2.4, sample_blur: 2.16, type: 'actual'},
+  ]
+
+  const test_stimuli_nonword_2 = [
+    {target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">cahs</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'been', sample_stimuli: 'cahs', target_blur: 2, sample_blur: 2.1,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">cahs</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'been', sample_stimuli: 'cahs', target_blur: 2, sample_blur: 2.2,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">cahs</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'been', sample_stimuli: 'cahs', target_blur: 2, sample_blur: 1.9,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">been</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">cahs</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'been', sample_stimuli: 'cahs', target_blur: 2, sample_blur: 1.8,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">bnee</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'from', sample_stimuli: 'bnee', target_blur: 2.2, sample_blur: 2.31,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">bnee</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'from', sample_stimuli: 'bnee', target_blur: 2.2, sample_blur: 2.42,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">bnee</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'from', sample_stimuli: 'bnee', target_blur: 2.2, sample_blur: 2.09,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">bnee</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'from', sample_stimuli: 'bnee', target_blur: 2.2, sample_blur: 1.98,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">emes</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'book', sample_stimuli: 'emes', target_blur: 2.4, sample_blur: 2.52,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">emes</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'book', sample_stimuli: 'emes', target_blur: 2.4, sample_blur: 2.64,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">emes</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'book', sample_stimuli: 'emes', target_blur: 2.4, sample_blur: 2.28,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">book</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">emes</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'book', sample_stimuli: 'emes', target_blur: 2.4, sample_blur: 2.16,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">obok</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'send', sample_stimuli: 'obok', target_blur: 2.6, sample_blur: 2.73,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">obok</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'send', sample_stimuli: 'obok', target_blur: 2.6, sample_blur: 2.86,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">obok</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'send', sample_stimuli: 'obok', target_blur: 2.6, sample_blur: 2.47,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">send</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">obok</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'send', sample_stimuli: 'obok', target_blur: 2.6, sample_blur: 2.34,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">nkce</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'cash', sample_stimuli: 'nkce', target_blur: 2, sample_blur: 2.1,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">nkce</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'cash', sample_stimuli: 'nkce', target_blur: 2, sample_blur: 2.2,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">nkce</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'cash', sample_stimuli: 'nkce', target_blur: 2, sample_blur: 1.9,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">nkce</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'cash', sample_stimuli: 'nkce', target_blur: 2, sample_blur: 1.8,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">kulc</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'dead', sample_stimuli: 'kulc', target_blur: 2.2, sample_blur: 2.31,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">kulc</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'dead', sample_stimuli: 'kulc', target_blur: 2.2, sample_blur: 2.42,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">kulc</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'dead', sample_stimuli: 'kulc', target_blur: 2.2, sample_blur: 2.09,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">dead</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">kulc</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'dead', sample_stimuli: 'kulc', target_blur: 2.2, sample_blur: 1.98,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">ddea</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'much', sample_stimuli: 'ddea', target_blur: 2.4, sample_blur: 2.52,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">ddea</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'much', sample_stimuli: 'ddea', target_blur: 2.4, sample_blur: 2.64,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">ddea</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'much', sample_stimuli: 'ddea', target_blur: 2.4, sample_blur: 2.28,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">much</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">ddea</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'much', sample_stimuli: 'ddea', target_blur: 2.4, sample_blur: 2.16,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">dsne</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'from', sample_stimuli: 'dsne', target_blur: 2.6, sample_blur: 2.73,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">dsne</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'from', sample_stimuli: 'dsne', target_blur: 2.6, sample_blur: 2.86,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">dsne</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'from', sample_stimuli: 'dsne', target_blur: 2.6, sample_blur: 2.47,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">from</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">dsne</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'from', sample_stimuli: 'dsne', target_blur: 2.6, sample_blur: 2.34,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">nlog</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'seem', sample_stimuli: 'nlog', target_blur: 2, sample_blur: 2.1,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">nlog</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'seem', sample_stimuli: 'nlog', target_blur: 2, sample_blur: 2.2,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">nlog</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'seem', sample_stimuli: 'nlog', target_blur: 2, sample_blur: 1.9,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">nlog</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'seem', sample_stimuli: 'nlog', target_blur: 2, sample_blur: 1.8,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'long', sample_stimuli: 'tset', target_blur: 2.2, sample_blur: 2.31,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'long', sample_stimuli: 'tset', target_blur: 2.2, sample_blur: 2.42,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'long', sample_stimuli: 'tset', target_blur: 2.2, sample_blur: 2.09,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">long</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'long', sample_stimuli: 'tset', target_blur: 2.2, sample_blur: 1.98,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">mhcu</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'look', sample_stimuli: 'mhcu', target_blur: 2.4, sample_blur: 2.52,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">mhcu</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'look', sample_stimuli: 'mhcu', target_blur: 2.4, sample_blur: 2.64,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">mhcu</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'look', sample_stimuli: 'mhcu', target_blur: 2.4, sample_blur: 2.28,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">mhcu</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'look', sample_stimuli: 'mhcu', target_blur: 2.4, sample_blur: 2.16,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.73px);font-size: 24px;font-family: monospace;">olok</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'want', sample_stimuli: 'olok', target_blur: 2.6, sample_blur: 2.73,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.86px);font-size: 24px;font-family: monospace;">olok</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'want', sample_stimuli: 'olok', target_blur: 2.6, sample_blur: 2.86,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.47px);font-size: 24px;font-family: monospace;">olok</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'want', sample_stimuli: 'olok', target_blur: 2.6, sample_blur: 2.47,type: 'actual'},
+{target: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">want</div>', sample: '<div style="filter: blur(2.34px);font-size: 24px;font-family: monospace;">olok</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'want', sample_stimuli: 'olok', target_blur: 2.6, sample_blur: 2.34,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">awtn</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'luck', sample_stimuli: 'awtn', target_blur: 2, sample_blur: 2.1,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">awtn</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'luck', sample_stimuli: 'awtn', target_blur: 2, sample_blur: 2.2,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(1.9px);font-size: 24px;font-family: monospace;">awtn</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'luck', sample_stimuli: 'awtn', target_blur: 2, sample_blur: 1.9,type: 'actual'},
+{target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(1.8px);font-size: 24px;font-family: monospace;">awtn</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'luck', sample_stimuli: 'awtn', target_blur: 2, sample_blur: 1.8,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.31px);font-size: 24px;font-family: monospace;">mroo</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'neck', sample_stimuli: 'mroo', target_blur: 2.2, sample_blur: 2.31,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.42px);font-size: 24px;font-family: monospace;">mroo</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'neck', sample_stimuli: 'mroo', target_blur: 2.2, sample_blur: 2.42,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(2.09px);font-size: 24px;font-family: monospace;">mroo</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'neck', sample_stimuli: 'mroo', target_blur: 2.2, sample_blur: 2.09,type: 'actual'},
+{target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">neck</div>', sample: '<div style="filter: blur(1.98px);font-size: 24px;font-family: monospace;">mroo</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'neck', sample_stimuli: 'mroo', target_blur: 2.2, sample_blur: 1.98,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.52px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.05, target_stimuli: 'room', sample_stimuli: 'tset', target_blur: 2.4, sample_blur: 2.52,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.64px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.1, target_stimuli: 'room', sample_stimuli: 'tset', target_blur: 2.4, sample_blur: 2.64,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.28px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.05, target_stimuli: 'room', sample_stimuli: 'tset', target_blur: 2.4, sample_blur: 2.28,type: 'actual'},
+{target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(2.16px);font-size: 24px;font-family: monospace;">tset</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.1, target_stimuli: 'room', sample_stimuli: 'tset', target_blur: 2.4, sample_blur: 2.16,type: 'actual'},
+  ]
+    
+    const attention_stimuli = [
+    {target: '<div style="filter: blur(1.5px);font-size: 24px;font-family: monospace;">look</div>', sample: '<div style="filter: blur(3px);font-size: 24px;font-family: monospace;">send</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 1, target_stimuli: 'look', sample_stimuli: 'send', target_blur: 1.5, sample_blur: 3, type: 'attention'},
+    {target: '<div style="filter: blur(3px);font-size: 24px;font-family: monospace;">room</div>', sample: '<div style="filter: blur(1.5px);font-size: 24px;font-family: monospace;">eben</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -1, target_stimuli: 'room', sample_stimuli: 'eben', target_blur: 3, sample_blur: 1.5, type: 'attention'},
+    {target: '<div style="filter: blur(4px);font-size: 24px;font-family: monospace;">cash</div>', sample: '<div style="filter: blur(1px);font-size: 24px;font-family: monospace;">long</div>', correct_response: 'w', is_word: '0', blurrier: 'target', task: 'stimuli', blur_dif: -0.75, target_stimuli: 'cash', sample_stimuli: 'long', target_blur: 4, sample_blur: 1, type: 'attention'},
+    {target: '<div style="filter: blur(1px);font-size: 24px;font-family: monospace;">luck</div>', sample: '<div style="filter: blur(4px);font-size: 24px;font-family: monospace;">cken</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 0.75, target_stimuli: 'luck', sample_stimuli: 'cken', target_blur: 1, sample_blur: 4, type: 'attention'},
+    {target: '<div style="filter: blur(2.5px);font-size: 24px;font-family: monospace;">seem</div>', sample: '<div style="filter: blur(5px);font-size: 24px;font-family: monospace;">want</div>', correct_response: 's', is_word: '0', blurrier: 'sample', task: 'stimuli', blur_dif: 1, target_stimuli: 'seem', sample_stimuli: 'want', target_blur: 2.5, sample_blur: 5, type: 'attention'},
+    ];
+
+		const trial1_practice = {
+      timeline: practice1,
+      timeline_variables: [
+        {target: '<div style="filter: blur(1px);font-size: 24px;font-family: monospace;">take</div>', sample: '<div style="filter: blur(1.3px);font-size: 24px;font-family: monospace;">four</div>', correct_response: ''},
+        {target: '<div style="filter: blur(1.5px);font-size: 24px;font-family: monospace;">take</div>', sample: '<div style="filter: blur(1.3px);font-size: 24px;font-family: monospace;">ufor</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">work</div>', sample: '<div style="filter: blur(2.5px);font-size: 24px;font-family: monospace;">take</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">work</div>', sample: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">ekta</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">four</div>', sample: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">work</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">four</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">korw</div>', correct_response: ''},
+      ]
+    };
+
+    const trial2_practice = {
+      timeline: practice2,
+      timeline_variables: [
+        {target: '<div style="filter: blur(1px);font-size: 24px;font-family: monospace;">take</div>', sample: '<div style="filter: blur(1.3px);font-size: 24px;font-family: monospace;">four</div>', correct_response: ''},
+        {target: '<div style="filter: blur(1.5px);font-size: 24px;font-family: monospace;">take</div>', sample: '<div style="filter: blur(1.3px);font-size: 24px;font-family: monospace;">ufor</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">work</div>', sample: '<div style="filter: blur(2.5px);font-size: 24px;font-family: monospace;">take</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2.4px);font-size: 24px;font-family: monospace;">work</div>', sample: '<div style="filter: blur(2.6px);font-size: 24px;font-family: monospace;">ekta</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2.2px);font-size: 24px;font-family: monospace;">four</div>', sample: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">work</div>', correct_response: ''},
+        {target: '<div style="filter: blur(2px);font-size: 24px;font-family: monospace;">four</div>', sample: '<div style="filter: blur(2.1px);font-size: 24px;font-family: monospace;">korw</div>', correct_response: ''},
+      ]
+    };
+    
+    if (indicator == 0){
+      test_stimuli = test_stimuli_word.concat(test_stimuli_nonword_1);
+      console.log(indicator);
+      console.log(test_stimuli)
+    } else {
+      test_stimuli = test_stimuli_word.concat(test_stimuli_nonword_2);
+      console.log(indicator);
+      console.log(test_stimuli);
+    };
+
+
+    const trial1_time = 
+      {
+        timeline: trial1,
+        timeline_variables: addAttentionChecks(test_stimuli, attention_stimuli)
+      };
+		
+		
+    const trial2_time = 
+      {
+        timeline: trial2,
+        timeline_variables: addAttentionChecks(test_stimuli, attention_stimuli)
+      };
+
+    const practice_end = {
+      type: jsPsychHtmlKeyboardResponse,
+      choices: 'b', 
+      response_ends_trial: true,
+      stimulus: `
+        <p>This is the end of practice trials.</p>
+        <p>Again, determine which word is blurrier by clicking W if you think the upper word is blurrier and S if the lower one is blurrier. </p>
+        <p>The actual trials would be in the same speed as the practice trials. </p>
+        <p>Please proceed to the actual trials by pressing B on the keyboard</p>
+      `,
+      post_trial_gap: 2000,
+    };
+
+    const instruction1 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+      <p> For this part of the experiment, the stimuli will appear very briefly on the screen. </p>
+      <p> The program will immediately move on to the next trial. </p>
+      <p> Please respond as soon as you see the stimuli. </p> 
+      <p> If you think the top letter string is blurrier, click W. </p>
+      <p> If you think the bottom letter string is blurrier, click S. </p>
+      <p> We will start with a brief tutorial. Press any key to begin.</p>
+      `,
+      post_trial_gap: 2000,
+    };
+
+
+    const instruction2 = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+      <p> For this part of the experiment, the bottom letter string will disappear, but the top letter string will remain on the screen. </p>
+      <p> You can respond any time after the bottom letter string has disappeared.</p>
+      <p> If you think the top letter string is blurrier, click W. </p>
+      <p> If you think the bottom letter string is blurrier, click S. </p>
+      <p> We will start with a brief tutorial. Press any key to begin.</p>
+      `,
+      post_trial_gap: 2000,
+    };
+
+    const end_of_demo = {
+      type: jsPsychHtmlKeyboardResponse,
+      choices: 'b', 
+      response_ends_trial: true, 
+      stimulus: `
+        <p>Next are the practice trials</p>
+        <p>Press B to begin.</p>
+      `,
+      post_trial_gap: 2000,
+    };
+
+    const debrief_block = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+
+      var trials_sample_remain = jsPsych.data.get().filter({task: 'memory'});
+      var correct_trials_sample_remain = trials_sample_remain.filter({correct: true});
+      var trials_same_time = jsPsych.data.get().filter({task: 'perceptual'});
+      var correct_trials_same_time = trials_same_time.filter({correct: true});
+      var accuracy_sample_remain = Math.round(correct_trials_sample_remain.count() / trials_sample_remain.count() * 100);
+      var accuracy_same_time = Math.round(correct_trials_same_time.count() / trials_same_time.count() * 100);
+      var attention_sample_remain = trials_sample_remain.filter({type: "attention"});
+      var accuracy_attention_sample_remain = Math.round(attention_sample_remain.count() / 4 * 100);
+      var attention_same_time = trials_same_time.filter({type: "attention"});
+      var accuracy_attention_same_time = Math.round(attention_same_time.count() / 4 * 100);
+
+      return `<p>You have now completed the experiment.</p>
+      <p>Thank you for your participation.</p>
+      <p>The study was divided into two blocks, each with different conditions regarding the timing and presentation of the stimuli.</p>
+      <p>These variations were intended to examine the role of memory by altering the time you had to respond and the duration for which the words were displayed.</p>
+      <p>This task was designed to explore how memory and recognition processes influence our perception of visual clarity.</p>
+      <p>Our hypothesis posited that real words would appear "sharper" than non-words due to memory effects rather than top-down processing.</p>
+      <p>You responded correctly on ${accuracy_sample_remain}% of the memory trials, which is two words remain on the screen when you response.</p>
+      <p>You responded correctly on ${accuracy_same_time}% of the perceptual trials, which is only one word remains on the screen when you response.</p>
+      <p>Press any key to complete the experiment. Thank you!</p>
+      <div style='width: 700px;'>`;
+
+      },
+    };
+
+    var subject_id = jsPsych.data.getURLVariable('PROLIFIC_PID');
+    var study_id = jsPsych.data.getURLVariable('STUDY_ID');
+    var session_id = jsPsych.data.getURLVariable('SESSION_ID');
+
+    const filename = `${subject_id}.csv`;
+
+    jsPsych.data.addProperties({
+      subject_id: subject_id,
+      study_id: study_id,
+      session_id: session_id
+    });
+
+    const save_data = {
+      type: jsPsychPipe,
+      action: "save",
+      experiment_id: "6SFNz6riR1Ma",
+      filename: filename,
+        data_string: ()=>jsPsych.data.get().csv()
+      };
+
+    const timeline = [welcome, general_instruction]; 
+
+    timeline_perceptual.push(instruction1, fixation, test_demo_1, delay_fixation, mask, fixation, test_demo_2, delay_fixation, mask, end_of_demo, trial1_practice, practice_end, trial1_time); 
+
+    timeline_memory.push(instruction2, fixation, target_sample_demo1, sample_tutorial1, fixation, target_sample_demo2, sample_tutorial2, end_of_demo, trial2_practice, practice_end, trial2_time); 
+
+    
+    async function createExperiment(){
+      const condition = await jsPsychPipe.getCondition("6SFNz6riR1Ma");
+      if(condition == 0) { 
+        timeline.push(timeline_perceptual, intermission, timeline_memory, debrief_block, save_data); 
+        jsPsych.data.addProperties({block_assignment: "perceptual - memory"});
+      }
+      if(condition == 1) {
+        timeline.push(timeline_memory, intermission, timeline_perceptual, debrief_block, save_data); 
+        jsPsych.data.addProperties({block_assignment: "memory - perceptual"});
+      }
+      jsPsych.run(timeline);
+      }
+
+      createExperiment();
+                  
+
+
+  </script>
+</html>
